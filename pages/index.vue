@@ -5,17 +5,20 @@
       <el-row type="flex" justify="center" style="min-height: calc(100vh - 300px);">
         <el-col :span="16" class="center">
           <h1>Поиск видео</h1>
-          <span v-text="storeSearch"/>
-          <el-input placeholder="Что хотите посмотреть?" v-model="search">
-            <i slot="suffix" class="el-input__icon">
-              <el-button 
-                slot="append" 
-                type="primary"
-                size="small"
-                @click="startSearchVideos"
-              >Найти</el-button>
-            </i>
-          </el-input>
+
+          <form style="width: 100%" @submit.prevent="startSearchVideos">
+            <el-input placeholder="Что хотите посмотреть?" v-model="search">
+              <i slot="suffix" class="el-input__icon">
+                <el-button 
+                  slot="append" 
+                  type="primary"
+                  size="small"
+                  @click="startSearchVideos"
+                >Найти</el-button>
+              </i>
+            </el-input>
+          </form>
+
         </el-col>
       </el-row>
     </template>
@@ -24,31 +27,34 @@
       <el-row type="flex" justify="center">
         <el-col>
           <h1>Поиск видео</h1>
-          <el-input placeholder="Что хотите посмотреть?" v-model="search">
-            <i slot="suffix" class="el-input__icon">
+
+          <form style="width: 100%" @submit.prevent="startSearchVideos">
+            <el-input placeholder="Что хотите посмотреть?" v-model="search">
+              <i slot="suffix" class="el-input__icon">
 
 
-              <el-tooltip placement="top" :content="isFavoriteSearch ? 'Добавно в избранное' : 'Добавить в избранное'">
+                <el-tooltip placement="top" :content="isFavoriteSearch ? 'Добавно в избранное' : 'Добавить в избранное'">
+                  <el-button 
+                    plain 
+                    :icon="`el-icon-star-${ isFavoriteSearch ? 'on' : 'off' }`" 
+                    :type="isFavoriteSearch ? 'success' : 'default'"
+                    size="mini"
+                    @click="!isFavoriteSearch && (modalVisible = true)"
+                  />
+                </el-tooltip>
+              </i>
+              <i slot="suffix" class="el-input__icon">
                 <el-button 
-                  plain 
-                  :icon="`el-icon-star-${ isFavoriteSearch ? 'on' : 'off' }`" 
-                  :type="isFavoriteSearch ? 'success' : 'default'"
-                  size="mini"
-                  @click="!isFavoriteSearch && (modalVisible = true)"
-                />
-              </el-tooltip>
-            </i>
-            <i slot="suffix" class="el-input__icon">
-              <el-button 
-                slot="append" 
-                type="primary"
-                size="small"
-                style="margin-left: 5px"
-                @click="startSearchVideos" 
-                :loading="loadingSearch"
-              >Найти</el-button>
-            </i>
-          </el-input>
+                  slot="append" 
+                  type="primary"
+                  size="small"
+                  style="margin-left: 5px"
+                  @click="startSearchVideos" 
+                  :loading="loadingSearch"
+                >Найти</el-button>
+              </i>
+            </el-input>
+          </form>
         </el-col>
       </el-row>
 
@@ -130,7 +136,7 @@ export default {
 
   watch: {
     storeSearch() {
-      this.search = this.storeSearch;
+      this.search = _.clone(this.storeSearch);
     },
   },
 
@@ -157,7 +163,7 @@ export default {
     ...mapActions(['startSearch']),
     ...mapMutations(['setMosaic']),
     async startSearchVideos() {
-      if(!this.search) return;
+      if(!this.search || this.loadingSearch) return;
       this.loadingSearch = true;
       if(!this.isFavoriteSearch) {
         await this.startSearch({ query: this.search })
@@ -173,7 +179,7 @@ export default {
 
   beforeMount() {
     if(!this.storeSearch) return;
-    this.search = this.storeSearch;
+    this.search = _.clone(this.storeSearch);
   },
 };
 </script>
