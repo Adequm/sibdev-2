@@ -9,6 +9,7 @@ dbScheme.dbUsers = {
 };
 
 dbScheme.dbFavorites = {
+  id: String,
   userId: String,
   maxLimit: String,
   name: String,

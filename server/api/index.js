@@ -7,7 +7,7 @@ module.exports = (db, TOKEN) => {
   const dbUtils = require('./dbUtils')({ db });
   const dbScheme = require('./dbScheme');
 
-  const apiSearch = ({ query, limit = 1 }) => `https://www.googleapis.com/youtube/v3/search?key=${ TOKEN }&type=video&q=${ query }&maxResults=${ limit }`;
+  const apiSearch = ({ query, maxLimit = 1, filter }) => `https://www.googleapis.com/youtube/v3/search?key=${ TOKEN }&type=video&q=${ query }&maxResults=${ maxLimit }&order=${ filter }`;
   const apiVideo = ({ id }) => `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&key=${ TOKEN }&id=${ id }`;
 
   api.db = async (req, res) => {
@@ -72,7 +72,7 @@ module.exports = (db, TOKEN) => {
 
   api.getVideos = async (req, res) => {
     try {
-      const linkSearch = apiSearch(req.body) // query, limit
+      const linkSearch = apiSearch(req.body) // query, maxLimit, filter
       const dataSearch = await (await fetch(linkSearch)).json();
       const dataVideos = _.map(dataSearch.items, search => {
         return new Promise(async resolve => {
@@ -106,13 +106,45 @@ module.exports = (db, TOKEN) => {
   api.addFavorite = async (req, res) => {
     try {
       const dbName = 'favorites';
-      const where = _.pick(req.body, ['userId', 'name', 'query', 'maxLimit', 'filter']);
+      const where = _.pick(req.body, ['userId', 'name', 'query', 'maxLimit', 'filter', 'id']);
       
       await dbUtils.serialize();
       const { rows, err } = await dbUtils.select(dbName, { where });
       if(!err && rows.length) throw 'Уже в избранном'; 
       await dbUtils.createTable(dbName, dbScheme.dbFavorites);
       await dbUtils.putToTable(dbName, where);
+
+      res.json({ success: true });
+    } catch(err) {
+      res.json({ err });
+    }
+  };
+
+  api.deleteFavorite = async (req, res) => {
+    try {
+      const dbName = 'favorites';
+      const where = _.pick(req.body, ['id']);
+      
+      await dbUtils.serialize();
+      const { err } = await dbUtils.delete(dbName, { where });
+      if(err) throw 'Ошибка удаления'; 
+
+      res.json({ success: true });
+    } catch(err) {
+      res.json({ err });
+    }
+  };
+
+  api.updateFavorite = async (req, res) => {
+    try {
+      const dbName = 'favorites';
+      const where = _.pick(req.body.where, ['id']);
+
+      const newDate = _.pick(req.body.new, ['name', 'query', 'maxLimit', 'filter']);
+      
+      await dbUtils.serialize();
+      const err = await dbUtils.update(dbName, { where, new: newDate });
+      if(err) throw 'Ошибка изменения'; 
 
       res.json({ success: true });
     } catch(err) {

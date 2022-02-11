@@ -12,7 +12,7 @@
                 slot="append" 
                 type="primary"
                 size="small"
-                @click="startSearch({ query: search })" 
+                @click="startSearchVideos"
               >Найти</el-button>
             </i>
           </el-input>
@@ -26,13 +26,15 @@
           <h1>Поиск видео</h1>
           <el-input placeholder="Что хотите посмотреть?" v-model="search">
             <i slot="suffix" class="el-input__icon">
+
+
               <el-tooltip placement="top" :content="isFavoriteSearch ? 'Добавно в избранное' : 'Добавить в избранное'">
                 <el-button 
                   plain 
                   :icon="`el-icon-star-${ isFavoriteSearch ? 'on' : 'off' }`" 
                   :type="isFavoriteSearch ? 'success' : 'default'"
                   size="mini"
-                  @click="addFavorite"
+                  @click="!isFavoriteSearch && (modalVisible = true)"
                 />
               </el-tooltip>
             </i>
@@ -42,7 +44,8 @@
                 type="primary"
                 size="small"
                 style="margin-left: 5px"
-                @click="startSearch({ query: search })" 
+                @click="startSearchVideos" 
+                :loading="loadingSearch"
               >Найти</el-button>
             </i>
           </el-input>
@@ -52,7 +55,7 @@
       <el-row style="margin: 50px 0">
         <el-col>
           <div class="search__header">
-            <span>Видео по запрmosaicосу «<strong v-text="storeSearch"/>»</span>
+            <span>Видео по запросу «<strong v-text="storeSearch"/>»</span>
             <span style="color: #909399" v-text="totalResults"/>
             <div class="mosaic">
               <i 
@@ -79,9 +82,18 @@
               :data="video"
             />
           </div>  
+          <el-empty v-else-if="!loadingSearch" description="Данных нет"/>
           <div v-else v-loading="true"/>
         </el-col>
       </el-row>
+
+      <EditFavoriteModal
+        :userId="userId"
+        :visible="modalVisible"
+        :favorite="localFavorite"
+        @close="modalVisible = false"
+        isFirstAddition
+      />
     </template>
   
   </div>
@@ -92,6 +104,7 @@ import _ from 'lodash';
 import { mapState, mapGetters, mapActions, mapMutations  } from 'vuex';
 
 import VideoCard from '@/components/VideoCard';
+import EditFavoriteModal from '@/components/EditFavoriteModal';
 
 export default {
   name: 'IndexPage',
@@ -100,6 +113,7 @@ export default {
 
   components: {
     VideoCard,
+    EditFavoriteModal,
   },
 
   props: {
@@ -108,8 +122,10 @@ export default {
 
   data: () => ({
     search: null,
+    loadingSearch: false,
     token: 'tokentest',
     message: null,
+    modalVisible: false,
   }),
 
   watch: {
@@ -127,17 +143,31 @@ export default {
       'userId'
     ]),
     ...mapGetters(['isFavoriteSearch']),
+    localFavorite() {
+      return {
+        filter: 'relevance',
+        maxLimit: '12',
+        query: this.storeSearch,
+        name: '',
+      }
+    },
   },
 
   methods: {
-    ...mapActions(['startSearch', 'addFavoriteToDB']),
+    ...mapActions(['startSearch']),
     ...mapMutations(['setMosaic']),
-    addFavorite() {
-      this.addFavoriteToDB({
-        userId: this.userId,
-        name: this.storeSearch,
-        query: this.storeSearch,
-      })
+    async startSearchVideos() {
+      if(!this.search) return;
+      this.loadingSearch = true;
+      if(!this.isFavoriteSearch) {
+        await this.startSearch({ query: this.search })
+      } else {
+        await this.startSearch({ 
+          ...this.isFavoriteSearch,
+          query: this.search
+        });
+      }
+      this.loadingSearch = false;
     },
   },
 

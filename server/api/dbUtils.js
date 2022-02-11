@@ -6,7 +6,15 @@ const whereConvert = where => {
     if(acc !== ' WHERE ') acc += 'AND ';
     return acc + `${ key }="${ value }" `;
   }, ' WHERE ');
-}
+};
+
+const setConvert = newData => {
+  if(!newData) return '';
+  return _.reduce(newData, (acc, value, key) => {
+    if(acc !== ' SET ') acc += ', ';
+    return acc + `${ key }="${ value }"`;
+  }, ' SET ');
+};
 
 module.exports = ({ db }) => ({
 
@@ -19,6 +27,20 @@ module.exports = ({ db }) => ({
       let query = `SELECT * FROM ${ name }`;
       if(where) query += whereConvert(where);
       db.all(query, (err, rows) => resolve({ err, rows }));
+    });
+  },
+
+  delete(name, { where } = {}) {
+    return new Promise(resolve => {
+      db.run(`DELETE FROM ${ name + whereConvert(where) }`, resolve);
+    })
+  },
+
+  update(name, { where, new: newData } = {}) {
+    return new Promise(resolve => {
+      console.log({ where, newData })
+      console.log(`UPDATE ${ name } ${ setConvert(newData) } ${ whereConvert(where) }`)
+      db.run(`UPDATE ${ name + setConvert(newData) + whereConvert(where) }`, resolve);
     });
   },
 
@@ -45,14 +67,9 @@ module.exports = ({ db }) => ({
     return new Promise(resolve => {
       const keys = _.keys(data).join();
       const values = _.values(data).map(v => `"${v}"`).join();
-      console.log(`INSERT INTO ${ name }(${ keys }) VALUES(${ values })`)
-      db.run(`INSERT INTO ${ name }(${ keys }) VALUES(${ values })`, (...rr) => {
-        console.log(rr)
-        resolve()
-      });
+      db.run(`INSERT INTO ${ name }(${ keys }) VALUES(${ values })`, resolve);
     })
   },
-
 
 
 

@@ -17,10 +17,10 @@
 
               <el-form label-position="top" ref="form" :model="form" id="login-form">
                 <el-form-item label="Логин" prop="login" :rules="rules.login">
-                  <el-input v-model="form.login"/>
+                  <el-input placeholder="Ваш логин" v-model="form.login"/>
                 </el-form-item>
                 <el-form-item label="Пароль" prop="password" :rules="rules.password"> 
-                  <el-input v-model="form.password" prop="pass" show-password/>
+                  <el-input placeholder="Ваш пароль" v-model="form.password" prop="pass" show-password/>
                 </el-form-item>
               </el-form>
 
@@ -29,7 +29,7 @@
                   type="primary" 
                   style="padding: 12px 50px;margin: 15px"
                   :disabled="!isValidForm"
-                  @click="auth"
+                  @click="auth()"
                 >Войти</el-button>
               </el-row>
               
@@ -92,7 +92,7 @@ export default {
     ...mapActions(['login', 'getFavorites']),
     ...mapMutations(['setToken', 'authSuccess', 'setUserId']),
     async auth(query, push = '/') {
-      const data = await this.login(query || this.form);
+      const data = await this.login(query || _.cloneDeep(this.form));
       if(!data.auth) {
         this.$refs.form.resetFields();
       }
@@ -108,6 +108,7 @@ export default {
 
   beforeMount() {
     const page = this.$route.query.from;
+    if(!this.token) return;
     this.auth({ token: this.token }, `/${ page == 'index' ? '' : page }`)
   },
 };
