@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const app = express();
 const server = require('http').createServer(app);
@@ -8,8 +9,7 @@ const sqlite3 = require('sqlite3').verbose();
 const dbPath = './server/.data/database.db';  
 const db = new sqlite3.Database(dbPath);
 
-const API_TOKEN = process.env.API_TOKEN || require('./api/token.js');
-const api = require('./api/index.js')(db, API_TOKEN);
+const api = require('./api/index.js')(db, process.env.API_TOKEN);
 
 
 
