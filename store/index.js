@@ -53,6 +53,7 @@ export const actions = {
     if(!id) return { err: 'No id' };
     return new Promise(async resolve => {
       try {
+        commit('clearFavoritesList');
         const {data} = await this.$axios.$post('/getFavorites', { id });
         commit('addFavoriteToList', data);
         resolve(data);
@@ -128,6 +129,10 @@ export const mutations = {
   },
   setUserId(state, userId) {
     Vue.set(state, 'userId', userId);
+  },
+
+  clearFavoritesList(state) {
+    Vue.set(state, 'favoriteSearches', []);
   },
 
   addFavoriteToList(state, favorites) {
